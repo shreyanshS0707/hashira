@@ -13,21 +13,21 @@ public class app {
 
     public static void main(String[] args) {
         // Test Case 1
-        System.out.println("=== Test Case 1 ===");
         try {
             Map<String, Object> testCase1 = loadTestCaseFromFile("test1.json");
             BigInteger result1 = solveSecretSharing(testCase1);
-            System.out.println("Constant C: " + result1);
+            // print only c for test1
+            System.out.println(result1.toString());
         } catch (Exception e) {
             System.err.println("Error loading test1.json: " + e.getMessage());
         }
 
         // Test Case 2
-        System.out.println("\n=== Test Case 2 ===");
         try {
             Map<String, Object> testCase2 = loadTestCaseFromFile("test2.json");
             BigInteger result2 = solveSecretSharing(testCase2);
-            System.out.println("Constant C: " + result2);
+            // print only c for test2
+            System.out.println(result2.toString());
         } catch (Exception e) {
             System.err.println("Error loading test2.json: " + e.getMessage());
         }
@@ -37,8 +37,6 @@ public class app {
      * Load test case data from JSON file
      */
     public static Map<String, Object> loadTestCaseFromFile(String filename) throws IOException {
-        System.out.println("Loading test case from: " + filename);
-
         // Read JSON file content
         String jsonContent = new String(Files.readAllBytes(Paths.get(filename)));
 
@@ -47,7 +45,6 @@ public class app {
         Type type = new TypeToken<Map<String, Object>>(){}.getType();
         Map<String, Object> data = gson.fromJson(jsonContent, type);
 
-        System.out.println("Successfully loaded test case from " + filename);
         return data;
     }
 
@@ -60,22 +57,8 @@ public class app {
         int n = getIntValue(keys.get("n"));
         int k = getIntValue(keys.get("k"));
 
-        System.out.println("n (total points): " + n);
-        System.out.println("k (min points needed): " + k);
-        System.out.println("Polynomial degree: " + (k-1));
-
         // Parse and convert all points
         List<Point> points = parsePoints(data, n);
-
-        // Display parsed points
-        System.out.println("\nParsed Points:");
-        for (int i = 0; i < Math.min(points.size(), 5); i++) {
-            Point p = points.get(i);
-            System.out.println("(" + p.x + ", " + p.y + ")");
-        }
-        if (points.size() > 5) {
-            System.out.println("... and " + (points.size() - 5) + " more points");
-        }
 
         // Select points for interpolation with validation
         List<Point> selectedPoints = selectPointsForInterpolation(points, k);
@@ -116,10 +99,8 @@ public class app {
                     // Convert from given base to decimal using BigInteger
                     BigInteger decimalValue = convertToDecimal(value, base);
                     points.add(new Point(i, decimalValue));
-
-                    System.out.println("Point " + i + ": base " + base +
-                            " value '" + value + "' converted successfully");
                 } catch (Exception e) {
+                    // conversion errors go to stderr so they don't mix with the c output
                     System.err.println("Error converting point " + i + ": " + e.getMessage());
                 }
             }
@@ -142,8 +123,6 @@ public class app {
     public static BigInteger calculateConstantTerm(List<Point> points) {
         BigDecimal result = BigDecimal.ZERO;
 
-        System.out.println("\nCalculating constant term using Lagrange interpolation:");
-
         for (int i = 0; i < points.size(); i++) {
             Point pi = points.get(i);
             BigDecimal term = new BigDecimal(pi.y);
@@ -164,12 +143,9 @@ public class app {
             // Calculate Li(0)
             BigDecimal lagrangeBasis = numerator.divide(denominator, 50, RoundingMode.HALF_UP);
             term = term.multiply(lagrangeBasis);
-
-            System.out.printf("Term %d: L%d(0) = %.10f%n", i+1, pi.x, lagrangeBasis.doubleValue());
             result = result.add(term);
         }
 
-        System.out.println("Final result (before rounding): " + result);
         return result.setScale(0, RoundingMode.HALF_UP).toBigInteger();
     }
 
@@ -192,11 +168,6 @@ public class app {
             if (!xCoords.add(p.x)) {
                 throw new IllegalStateException("Duplicate x-coordinate found: " + p.x);
             }
-        }
-
-        System.out.println("Selected points for interpolation:");
-        for (Point p : selected) {
-            System.out.println("  Point(" + p.x + ", " + p.y + ")");
         }
 
         return selected;
